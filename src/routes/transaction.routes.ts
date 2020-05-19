@@ -1,33 +1,37 @@
 import { Router } from 'express';
-import CreateTransactionService from '../services/CreateTransactionService';
 
 import TransactionsRepository from '../repositories/TransactionsRepository';
+import CreateTransactionService from '../services/CreateTransactionService';
 
 const transactionRouter = Router();
 
 const transactionsRepository = new TransactionsRepository();
+const createTransaction = new CreateTransactionService(transactionsRepository);
 
-// Rota GET
 transactionRouter.get('/', (request, response) => {
   try {
     const transactions = transactionsRepository.all();
+
     const balance = transactionsRepository.getBalance();
+
     return response.json({ transactions, balance });
   } catch (err) {
     return response.status(400).json({ error: err.message });
   }
 });
 
-// Rota POST
 transactionRouter.post('/', (request, response) => {
+  const { title, value, type } = request.body;
   try {
-    const { title, value, type } = request.body;
+    if (type !== 'income' && type !== 'outcome') {
+      throw new Error('Type invalido');
+    }
 
-    const createTransaction = new CreateTransactionService(
-      transactionsRepository,
-    );
-
-    const transaction = createTransaction.execute({ title, value, type });
+    const transaction = createTransaction.execute({
+      title,
+      value,
+      type,
+    });
 
     return response.json(transaction);
   } catch (err) {
